@@ -10,12 +10,23 @@ class App extends Component {
       content: '',
       author: ''
     },
-    editingBlogId: null
+    editingBlogId: null,
+    featureEnabled: false // Initialize feature flag state
   };
 
   componentDidMount() {
     this.refreshList();
+    this.checkFeatureFlag();
   }
+
+  checkFeatureFlag = () => {
+    axios
+      .get('https://django-server-production-6614.up.railway.app/api/feature-flag/')
+      .then((res) => {
+        this.setState({ featureEnabled: res.data.feature_enabled });
+      })
+      .catch((err) => console.log(err));
+  };
 
   refreshList = () => {
     axios
@@ -88,7 +99,7 @@ class App extends Component {
   };
 
   render() {
-    const { blogs, newBlog, editingBlogId } = this.state;
+    const { blogs, newBlog, editingBlogId, featureEnabled } = this.state;
 
     // Conditional rendering for update form
     let form;
@@ -162,32 +173,33 @@ class App extends Component {
         <p>{blog.content}</p>
         <p>Author: {blog.author}</p>
         <p>Date Created: {blog.date_created}</p>
-        <div>
-          {/* Buttons for edit and delete */}
-          <button type='button' class="btn btn-info " style={{margin:'0px 5px'}} onClick={() => this.editBlog(blog)}>Edit</button>
-          <button type="button" class="btn btn-danger" onClick={() => this.deleteBlog(blog.id)}>Delete</button>
-        </div>
+        {featureEnabled && (
+          <div>
+            {/* Buttons for edit and delete */}
+            <button type='button' class="btn btn-info " style={{margin:'0px 5px'}} onClick={() => this.editBlog(blog)}>Edit</button>
+            <button type="button" class="btn btn-danger" onClick={() => this.deleteBlog(blog.id)}>Delete</button>
+          </div>
+        )}
       </div>
     ));
 
     return (
       <div className="App">
         <main>
-
-            <div className="row" style={{margin:'10px 40px'}}>
-              <div className='col-md-12'><h3>Blog App</h3></div>
-              
-              <div className="col-md-4">
-                {/* Render the form */}
+          <div className="row" style={{margin:'10px 40px'}}>
+            <div className='col-md-12'><h3>Blog App</h3></div>
+            <div className="col-md-4">
+              {/* Render the form if feature is enabled */}
+              {featureEnabled && (
                 <div className="form-container">
                   {form}
                 </div>
-              </div>
-              <div className="col-md-8">
-                {/* Display the fetched blog posts */}
-                {blogList}
-              </div>
-
+              )}
+            </div>
+            <div className="col-md-8">
+              {/* Display the fetched blog posts */}
+              {blogList}
+            </div>
           </div>
         </main>
       </div>
